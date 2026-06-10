@@ -1,0 +1,3090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Pool Quote Generator | Decision Tree Prototype</title>
+
+  <style>
+    :root {
+      --blue: #0d6efd;
+      --deep-blue: #064b9b;
+      --aqua: #15c8d8;
+      --light-blue: #eaf8ff;
+      --dark: #102033;
+      --muted: #6b7a90;
+      --white: #ffffff;
+      --border: #d8e6f2;
+      --soft: #f6fbff;
+      --green: #1f9d68;
+      --orange: #f59e0b;
+      --red: #d94c4c;
+      --shadow: 0 18px 45px rgba(13, 110, 253, 0.14);
+      --radius: 22px;
+      --radius-sm: 14px;
+      --font: Arial, Helvetica, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--dark);
+      background:
+        radial-gradient(circle at top left, rgba(21, 200, 216, 0.24), transparent 30%),
+        linear-gradient(180deg, #f7fcff 0%, #edf7ff 100%);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 560px;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .logo {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--blue), var(--aqua));
+      display: grid;
+      place-items: center;
+      color: var(--white);
+      font-weight: 900;
+      flex: 0 0 auto;
+      box-shadow: var(--shadow);
+    }
+
+    .brand-text {
+      min-width: 0;
+    }
+
+    .brand-text h1 {
+      font-size: 1rem;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-text p {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .step-counter {
+      font-size: 0.76rem;
+      color: var(--muted);
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 10px;
+      white-space: nowrap;
+    }
+
+    .progress-wrap {
+      width: 100%;
+      height: 9px;
+      background: #dceef8;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .progress {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--aqua));
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screen {
+      display: none;
+      animation: fadeIn 0.18s ease;
+      flex: 1;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .eyebrow {
+      color: var(--deep-blue);
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 1.65rem;
+      line-height: 1.05;
+      margin-bottom: 10px;
+    }
+
+    .description {
+      color: var(--muted);
+      font-size: 0.96rem;
+      line-height: 1.45;
+      margin-bottom: 18px;
+    }
+
+    .options {
+      display: grid;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .option {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--white);
+      color: var(--dark);
+      border-radius: var(--radius-sm);
+      padding: 15px;
+      text-align: left;
+      cursor: pointer;
+      transition: 0.18s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .option:hover {
+      border-color: var(--aqua);
+      transform: translateY(-1px);
+    }
+
+    .option.selected {
+      border-color: var(--blue);
+      background: var(--light-blue);
+      box-shadow: 0 8px 22px rgba(13, 110, 253, 0.12);
+    }
+
+    .option-main {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .option-title {
+      font-weight: 900;
+      font-size: 0.98rem;
+    }
+
+    .option-sub {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.3;
+    }
+
+    .check {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: 2px solid var(--border);
+      flex: 0 0 auto;
+    }
+
+    .option.selected .check {
+      border-color: var(--blue);
+      background:
+        radial-gradient(circle at center, var(--blue) 42%, transparent 44%);
+    }
+
+    .fields {
+      display: grid;
+      gap: 14px;
+      margin-top: 4px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      font-size: 0.86rem;
+      font-weight: 900;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      color: var(--dark);
+      outline: none;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    .small-note {
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.4;
+      background: var(--soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+    }
+
+    .branch-note {
+      margin-bottom: 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #bde9f2;
+      background: #f0fcff;
+      color: #236474;
+      padding: 12px;
+      font-size: 0.86rem;
+      line-height: 1.4;
+    }
+
+    .photo-box {
+      border: 2px dashed #acd8ef;
+      background: #f7fcff;
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .photo-box strong {
+      color: var(--dark);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 18px;
+      cursor: pointer;
+      font-weight: 900;
+      transition: 0.18s ease;
+      text-decoration: none;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), var(--aqua));
+      color: var(--white);
+      flex: 1;
+      box-shadow: 0 12px 28px rgba(13, 110, 253, 0.22);
+    }
+
+    .btn-secondary {
+      background: var(--white);
+      color: var(--deep-blue);
+      border: 1px solid var(--border);
+    }
+
+    .btn-danger {
+      background: #fff5f5;
+      color: var(--red);
+      border: 1px solid #ffd0d0;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .review {
+      display: grid;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .review-row {
+      background: #f7fbff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .review-row span {
+      font-size: 0.74rem;
+      color: var(--muted);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .review-row strong {
+      font-size: 0.95rem;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+
+    .lead-box {
+      margin-top: 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #bce8d1;
+      background: #f0fff7;
+      padding: 15px;
+    }
+
+    .lead-box h3 {
+      color: var(--green);
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .lead-box p {
+      color: #315b47;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .summary-text {
+      margin-top: 14px;
+      min-height: 220px;
+      font-size: 0.86rem;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding: 14px 0 4px;
+    }
+
+    @media (min-width: 560px) {
+      .app {
+        padding-top: 30px;
+        padding-bottom: 30px;
+      }
+
+      .card {
+        min-height: 700px;
+      }
+
+      .action-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">PQ</div>
+        <div class="brand-text">
+          <h1>Pool Quote Generator</h1>
+          <p>Adaptive decision-tree prototype</p>
+        </div>
+      </div>
+
+      <div class="step-counter" id="stepCounter">Step 1</div>
+    </header>
+
+    <div class="progress-wrap">
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <section class="card">
+
+      <!-- START -->
+      <div class="screen active" data-screen="start">
+        <div class="eyebrow">Start here</div>
+        <h2>What do you need help with?</h2>
+        <p class="description">
+          Pick the closest option. The next questions will change based on your answer.
+        </p>
+
+        <div class="options" data-name="serviceType" data-mode="single">
+          <button class="option" data-value="Regular pool cleaning / maintenance">
+            <span class="option-main">
+              <span class="option-title">Regular pool cleaning / maintenance</span>
+              <span class="option-sub">Weekly, bi-weekly, or ongoing pool care.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="One-time pool cleaning">
+            <span class="option-main">
+              <span class="option-title">One-time pool cleaning</span>
+              <span class="option-sub">A single cleanup, vacuuming, or water reset.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Green pool cleanup">
+            <span class="option-main">
+              <span class="option-title">Green pool cleanup</span>
+              <span class="option-sub">Algae, swampy water, leaves, or neglected pool.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Pool opening">
+            <span class="option-main">
+              <span class="option-title">Pool opening</span>
+              <span class="option-sub">Seasonal startup, cover removal, chemicals, equipment start.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Pool closing">
+            <span class="option-main">
+              <span class="option-title">Pool closing</span>
+              <span class="option-sub">Winterizing, cover install, closing chemicals, shutdown.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Equipment problem">
+            <span class="option-main">
+              <span class="option-title">Equipment problem</span>
+              <span class="option-sub">Pump, filter, heater, salt system, leak, or pressure issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Hot tub / spa service">
+            <span class="option-main">
+              <span class="option-title">Hot tub / spa service</span>
+              <span class="option-sub">Cleaning, water care, heater, jets, filter, or spa issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure yet">
+            <span class="option-main">
+              <span class="option-title">Not sure yet</span>
+              <span class="option-sub">No problem. We’ll help narrow it down.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- POOL TYPE -->
+      <div class="screen" data-screen="poolType">
+        <div class="eyebrow">Pool type</div>
+        <h2>What type of pool do you have?</h2>
+        <p class="description">
+          This helps determine the kind of service, tools, and time the job may require.
+        </p>
+
+        <div class="options" data-name="poolType" data-mode="single">
+          <button class="option" data-value="In-ground pool">
+            <span class="option-main">
+              <span class="option-title">In-ground pool</span>
+              <span class="option-sub">Most common residential setup.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Above-ground pool">
+            <span class="option-main">
+              <span class="option-title">Above-ground pool</span>
+              <span class="option-sub">Raised or smaller pool setup.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Commercial pool">
+            <span class="option-main">
+              <span class="option-title">Commercial pool</span>
+              <span class="option-sub">Business, apartment, HOA, hotel, or public use.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">That’s fine. Photos can help later.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- SPA TYPE -->
+      <div class="screen" data-screen="spaType">
+        <div class="eyebrow">Spa type</div>
+        <h2>What type of spa do you have?</h2>
+        <p class="description">
+          Spa-only jobs need different questions than regular pool service.
+        </p>
+
+        <div class="options" data-name="spaType" data-mode="single">
+          <button class="option" data-value="Standalone hot tub">
+            <span class="option-main">
+              <span class="option-title">Standalone hot tub</span>
+              <span class="option-sub">Separate hot tub unit.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Built-in spa attached to pool">
+            <span class="option-main">
+              <span class="option-title">Built-in spa attached to pool</span>
+              <span class="option-sub">Spa connected to pool system.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Swim spa">
+            <span class="option-main">
+              <span class="option-title">Swim spa</span>
+              <span class="option-sub">Larger spa used for soaking/exercise.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">No problem.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- SIZE -->
+      <div class="screen" data-screen="size">
+        <div class="eyebrow">Size</div>
+        <h2>About how large is it?</h2>
+        <p class="description">
+          A rough estimate is enough. The final quote can be adjusted after photos or inspection.
+        </p>
+
+        <div class="options" data-name="size" data-mode="single">
+          <button class="option" data-value="Small">
+            <span class="option-main">
+              <span class="option-title">Small</span>
+              <span class="option-sub">Compact backyard pool or small spa.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Medium">
+            <span class="option-main">
+              <span class="option-title">Medium</span>
+              <span class="option-sub">Average residential size.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Large">
+            <span class="option-main">
+              <span class="option-title">Large</span>
+              <span class="option-sub">Large pool, custom shape, or bigger setup.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Extra large">
+            <span class="option-main">
+              <span class="option-title">Extra large</span>
+              <span class="option-sub">Oversized, commercial-style, or complex setup.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">That’s okay.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- MAINTENANCE FREQUENCY -->
+      <div class="screen" data-screen="maintenanceFrequency">
+        <div class="eyebrow">Maintenance</div>
+        <h2>How often do you want service?</h2>
+        <p class="description">
+          Recurring service helps keep the pool stable instead of letting it turn into a bigger cleanup job.
+        </p>
+
+        <div class="options" data-name="frequency" data-mode="single">
+          <button class="option" data-value="Weekly">
+            <span class="option-main">
+              <span class="option-title">Weekly</span>
+              <span class="option-sub">Best for steady pool care.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Every other week">
+            <span class="option-main">
+              <span class="option-title">Every other week</span>
+              <span class="option-sub">Lighter recurring maintenance.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Once a month">
+            <span class="option-main">
+              <span class="option-title">Once a month</span>
+              <span class="option-sub">Basic check-in style service.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Seasonal maintenance">
+            <span class="option-main">
+              <span class="option-title">Seasonal maintenance</span>
+              <span class="option-sub">Help during pool season only.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">The company can recommend a plan.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- CURRENT CONDITION -->
+      <div class="screen" data-screen="currentCondition">
+        <div class="eyebrow">Current condition</div>
+        <h2>What condition is it in right now?</h2>
+        <p class="description">
+          Select all that apply. A pool can have more than one issue at once.
+        </p>
+
+        <div class="options" data-name="currentIssues" data-mode="multi">
+          <button class="option" data-value="Clear and clean">
+            <span class="option-main">
+              <span class="option-title">Clear and clean</span>
+              <span class="option-sub">Looks mostly ready for normal service.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Slightly cloudy">
+            <span class="option-main">
+              <span class="option-title">Slightly cloudy</span>
+              <span class="option-sub">May need balancing or filtration.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Leaves or debris">
+            <span class="option-main">
+              <span class="option-title">Leaves or debris</span>
+              <span class="option-sub">Physical cleanup may be needed.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Algae spots">
+            <span class="option-main">
+              <span class="option-title">Algae spots</span>
+              <span class="option-sub">Walls, steps, or corners may need brushing/treatment.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Green water">
+            <span class="option-main">
+              <span class="option-title">Green water</span>
+              <span class="option-sub">May need recovery cleanup before maintenance.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Has not been serviced recently">
+            <span class="option-main">
+              <span class="option-title">Has not been serviced recently</span>
+              <span class="option-sub">Could require cleanup before regular service.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Photos can help.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="small-note">
+          If this sounds like a green or neglected pool, the tool will automatically ask recovery questions next.
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- LAST SERVICED -->
+      <div class="screen" data-screen="lastServiced">
+        <div class="eyebrow">Service history</div>
+        <h2>When was it last serviced?</h2>
+        <p class="description">
+          This helps tell whether it is a normal maintenance lead or a cleanup-first lead.
+        </p>
+
+        <div class="options" data-name="lastServiced" data-mode="single">
+          <button class="option" data-value="Within the last week">
+            <span class="option-main">
+              <span class="option-title">Within the last week</span>
+              <span class="option-sub">Recently maintained.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Within the last month">
+            <span class="option-main">
+              <span class="option-title">Within the last month</span>
+              <span class="option-sub">Probably manageable.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="1–3 months ago">
+            <span class="option-main">
+              <span class="option-title">1–3 months ago</span>
+              <span class="option-sub">May need extra attention.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="More than 3 months ago">
+            <span class="option-main">
+              <span class="option-title">More than 3 months ago</span>
+              <span class="option-sub">May need recovery or inspection first.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">No problem.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- ONE TIME CLEANING -->
+      <div class="screen" data-screen="cleaningNeeds">
+        <div class="eyebrow">One-time cleaning</div>
+        <h2>What needs to be cleaned?</h2>
+        <p class="description">
+          Select everything that applies. This helps avoid underquoting the job.
+        </p>
+
+        <div class="options" data-name="cleaningNeeds" data-mode="multi">
+          <button class="option" data-value="Water balancing">
+            <span class="option-main">
+              <span class="option-title">Water balancing</span>
+              <span class="option-sub">Chemicals, pH, chlorine, etc.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Leaves or debris">
+            <span class="option-main">
+              <span class="option-title">Leaves or debris</span>
+              <span class="option-sub">Debris on top or bottom.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Vacuuming">
+            <span class="option-main">
+              <span class="option-title">Vacuuming</span>
+              <span class="option-sub">Floor cleanup.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Brushing walls or steps">
+            <span class="option-main">
+              <span class="option-title">Brushing walls or steps</span>
+              <span class="option-sub">Algae or buildup on surfaces.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Filter cleaning">
+            <span class="option-main">
+              <span class="option-title">Filter cleaning</span>
+              <span class="option-sub">Cartridge, sand, or DE filter care.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">A technician can review.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- WATER SEVERITY -->
+      <div class="screen" data-screen="waterSeverity">
+        <div class="eyebrow">Water condition</div>
+        <h2>What does the water look like?</h2>
+        <p class="description">
+          This decides whether the job is standard cleaning or recovery cleanup.
+        </p>
+
+        <div class="options" data-name="waterSeverity" data-mode="single">
+          <button class="option" data-value="Clear">
+            <span class="option-main">
+              <span class="option-title">Clear</span>
+              <span class="option-sub">Water is mostly clean.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Cloudy">
+            <span class="option-main">
+              <span class="option-title">Cloudy</span>
+              <span class="option-sub">Can see some water issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Light green">
+            <span class="option-main">
+              <span class="option-title">Light green</span>
+              <span class="option-sub">Likely algae treatment needed.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Dark green">
+            <span class="option-main">
+              <span class="option-title">Dark green</span>
+              <span class="option-sub">Recovery cleanup likely.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Brown / black / swampy">
+            <span class="option-main">
+              <span class="option-title">Brown / black / swampy</span>
+              <span class="option-sub">Heavy recovery job.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Photos can help.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- RECOVERY SEVERITY -->
+      <div class="screen" data-screen="recoverySeverity">
+        <div class="eyebrow">Recovery cleanup</div>
+        <h2>How bad is the pool right now?</h2>
+        <p class="description">
+          Green or neglected pools may need multiple visits, extra chemicals, or equipment checks.
+        </p>
+
+        <div class="branch-note">
+          This branch only appears when the request sounds like a cleanup or recovery job.
+        </div>
+
+        <div class="options" data-name="recoverySeverity" data-mode="single">
+          <button class="option" data-value="Light green">
+            <span class="option-main">
+              <span class="option-title">Light green</span>
+              <span class="option-sub">Early algae or chemical issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Dark green">
+            <span class="option-main">
+              <span class="option-title">Dark green</span>
+              <span class="option-sub">Heavier cleanup likely.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Very dark / swampy">
+            <span class="option-main">
+              <span class="option-title">Very dark / swampy</span>
+              <span class="option-sub">May need multiple visits.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Cannot see the bottom">
+            <span class="option-main">
+              <span class="option-title">Cannot see the bottom</span>
+              <span class="option-sub">Unknown debris or safety concern.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Photos strongly recommended.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- RECOVERY ISSUES -->
+      <div class="screen" data-screen="recoveryIssues">
+        <div class="eyebrow">Recovery details</div>
+        <h2>What issues are present?</h2>
+        <p class="description">
+          Select all that apply. This gives the business a better picture before giving a price.
+        </p>
+
+        <div class="options" data-name="recoveryIssues" data-mode="multi">
+          <button class="option" data-value="Algae">
+            <span class="option-main">
+              <span class="option-title">Algae</span>
+              <span class="option-sub">Water, walls, steps, or floor.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Leaves">
+            <span class="option-main">
+              <span class="option-title">Leaves</span>
+              <span class="option-sub">Leaves in water or on bottom.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Heavy debris">
+            <span class="option-main">
+              <span class="option-title">Heavy debris</span>
+              <span class="option-sub">Branches, dirt, trash, or heavy buildup.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Bad smell">
+            <span class="option-main">
+              <span class="option-title">Bad smell</span>
+              <span class="option-sub">May indicate long-term sitting water.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Bugs / mosquitoes">
+            <span class="option-main">
+              <span class="option-title">Bugs / mosquitoes</span>
+              <span class="option-sub">Stagnant water concern.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Low water level">
+            <span class="option-main">
+              <span class="option-title">Low water level</span>
+              <span class="option-sub">May affect pump/filter operation.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Pool has been sitting unused">
+            <span class="option-main">
+              <span class="option-title">Pool has been sitting unused</span>
+              <span class="option-sub">Longer recovery may be needed.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Photos can help.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- PUMP FILTER RUN -->
+      <div class="screen" data-screen="pumpFilterRun">
+        <div class="eyebrow">Pump and filter</div>
+        <h2>Can the pump and filter run?</h2>
+        <p class="description">
+          A green pool with working equipment is different from a green pool with a dead pump.
+        </p>
+
+        <div class="options" data-name="pumpFilterRun" data-mode="single">
+          <button class="option" data-value="Yes">
+            <span class="option-main">
+              <span class="option-title">Yes</span>
+              <span class="option-sub">Pump/filter can run.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="No">
+            <span class="option-main">
+              <span class="option-title">No</span>
+              <span class="option-sub">Equipment may need repair first.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Sometimes">
+            <span class="option-main">
+              <span class="option-title">Sometimes</span>
+              <span class="option-sub">Intermittent issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">A technician may need to check.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="small-note">
+          If you choose No, Sometimes, or Not sure, the equipment branch will appear next.
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- RECOVERY TIME -->
+      <div class="screen" data-screen="recoveryTime">
+        <div class="eyebrow">Timing</div>
+        <h2>How long has it been like this?</h2>
+        <p class="description">
+          Longer sitting time usually means more cleanup, more chemicals, and more uncertainty.
+        </p>
+
+        <div class="options" data-name="recoveryTime" data-mode="single">
+          <button class="option" data-value="Less than 1 week">
+            <span class="option-main">
+              <span class="option-title">Less than 1 week</span>
+              <span class="option-sub">Recent issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="1–4 weeks">
+            <span class="option-main">
+              <span class="option-title">1–4 weeks</span>
+              <span class="option-sub">Moderate sitting time.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="1–3 months">
+            <span class="option-main">
+              <span class="option-title">1–3 months</span>
+              <span class="option-sub">Likely bigger cleanup.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="More than 3 months">
+            <span class="option-main">
+              <span class="option-title">More than 3 months</span>
+              <span class="option-sub">Heavy recovery or inspection likely.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">No problem.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- OPENING -->
+      <div class="screen" data-screen="openingCovered">
+        <div class="eyebrow">Pool opening</div>
+        <h2>Is the pool currently covered?</h2>
+        <p class="description">
+          The cover type can affect time, cleaning, and setup.
+        </p>
+
+        <div class="options" data-name="openingCovered" data-mode="single">
+          <button class="option" data-value="Yes, safety cover">
+            <span class="option-main">
+              <span class="option-title">Yes, safety cover</span>
+              <span class="option-sub">Anchored safety cover.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Yes, tarp-style cover">
+            <span class="option-main">
+              <span class="option-title">Yes, tarp-style cover</span>
+              <span class="option-sub">Tarp cover with bags or weights.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="No cover">
+            <span class="option-main">
+              <span class="option-title">No cover</span>
+              <span class="option-sub">Pool is uncovered.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">No problem.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div class="screen" data-screen="openingTasks">
+        <div class="eyebrow">Opening tasks</div>
+        <h2>What do you need done?</h2>
+        <p class="description">
+          Select all that apply.
+        </p>
+
+        <div class="options" data-name="openingTasks" data-mode="multi">
+          <button class="option" data-value="Remove cover">
+            <span class="option-main">
+              <span class="option-title">Remove cover</span>
+              <span class="option-sub">Take cover off pool.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Clean cover">
+            <span class="option-main">
+              <span class="option-title">Clean cover</span>
+              <span class="option-sub">Rinse or clean cover before storing.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Start pump/filter">
+            <span class="option-main">
+              <span class="option-title">Start pump/filter</span>
+              <span class="option-sub">Restart circulation system.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Add chemicals">
+            <span class="option-main">
+              <span class="option-title">Add chemicals</span>
+              <span class="option-sub">Startup treatment.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Vacuum / clean pool">
+            <span class="option-main">
+              <span class="option-title">Vacuum / clean pool</span>
+              <span class="option-sub">Remove dirt and debris.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Inspect equipment">
+            <span class="option-main">
+              <span class="option-title">Inspect equipment</span>
+              <span class="option-sub">Check pump, filter, heater, salt system.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Company can recommend what’s needed.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div class="screen" data-screen="openingWater">
+        <div class="eyebrow">Opening water</div>
+        <h2>What does the water look like?</h2>
+        <p class="description">
+          Dirty or green water may add recovery cleanup before the pool is ready.
+        </p>
+
+        <div class="options" data-name="openingWater" data-mode="single">
+          <button class="option" data-value="Clear">
+            <span class="option-main">
+              <span class="option-title">Clear</span>
+              <span class="option-sub">Looks pretty good.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Cloudy">
+            <span class="option-main">
+              <span class="option-title">Cloudy</span>
+              <span class="option-sub">May need balancing.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Green">
+            <span class="option-main">
+              <span class="option-title">Green</span>
+              <span class="option-sub">Recovery questions may be needed.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Very dirty">
+            <span class="option-main">
+              <span class="option-title">Very dirty</span>
+              <span class="option-sub">Cleanup likely before regular use.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="I have not checked">
+            <span class="option-main">
+              <span class="option-title">I have not checked</span>
+              <span class="option-sub">No problem.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- CLOSING -->
+      <div class="screen" data-screen="closingTasks">
+        <div class="eyebrow">Pool closing</div>
+        <h2>What do you need done for closing?</h2>
+        <p class="description">
+          Select everything that applies.
+        </p>
+
+        <div class="options" data-name="closingTasks" data-mode="multi">
+          <button class="option" data-value="Winterize plumbing">
+            <span class="option-main">
+              <span class="option-title">Winterize plumbing</span>
+              <span class="option-sub">Protect lines from freezing.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Blow out lines">
+            <span class="option-main">
+              <span class="option-title">Blow out lines</span>
+              <span class="option-sub">Clear plumbing lines.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Add closing chemicals">
+            <span class="option-main">
+              <span class="option-title">Add closing chemicals</span>
+              <span class="option-sub">Seasonal chemical treatment.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Remove ladders / handrails">
+            <span class="option-main">
+              <span class="option-title">Remove ladders / handrails</span>
+              <span class="option-sub">Pool accessory removal.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Install cover">
+            <span class="option-main">
+              <span class="option-title">Install cover</span>
+              <span class="option-sub">Cover pool for season.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Lower water level">
+            <span class="option-main">
+              <span class="option-title">Lower water level</span>
+              <span class="option-sub">Lower water before closing.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Clean before closing">
+            <span class="option-main">
+              <span class="option-title">Clean before closing</span>
+              <span class="option-sub">Pool needs cleaned first.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Company can recommend the closing process.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div class="screen" data-screen="closingCover">
+        <div class="eyebrow">Cover</div>
+        <h2>Do you already have a cover?</h2>
+        <p class="description">
+          This helps determine if the job includes cover installation only or cover planning too.
+        </p>
+
+        <div class="options" data-name="closingCover" data-mode="single">
+          <button class="option" data-value="Yes">
+            <span class="option-main">
+              <span class="option-title">Yes</span>
+              <span class="option-sub">Cover is already available.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="No">
+            <span class="option-main">
+              <span class="option-title">No</span>
+              <span class="option-sub">May need cover guidance.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Need help choosing one">
+            <span class="option-main">
+              <span class="option-title">Need help choosing one</span>
+              <span class="option-sub">May require recommendation or measurement.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">No problem.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div class="screen" data-screen="closingClean">
+        <div class="eyebrow">Before closing</div>
+        <h2>Is the pool clean enough to close?</h2>
+        <p class="description">
+          A dirty or green pool may need cleanup before proper closing.
+        </p>
+
+        <div class="options" data-name="closingClean" data-mode="single">
+          <button class="option" data-value="Yes, clear and clean">
+            <span class="option-main">
+              <span class="option-title">Yes, clear and clean</span>
+              <span class="option-sub">Ready for closing work.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Somewhat dirty">
+            <span class="option-main">
+              <span class="option-title">Somewhat dirty</span>
+              <span class="option-sub">May need cleaning first.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Green / cloudy">
+            <span class="option-main">
+              <span class="option-title">Green / cloudy</span>
+              <span class="option-sub">Cleanup questions may be needed.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Photos can help.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- GENERAL DISCOVERY -->
+      <div class="screen" data-screen="generalSymptoms">
+        <div class="eyebrow">General discovery</div>
+        <h2>What are you noticing?</h2>
+        <p class="description">
+          Select everything that applies. This helps route your request to the right type of quote.
+        </p>
+
+        <div class="options" data-name="generalSymptoms" data-mode="multi">
+          <button class="option" data-value="Water looks dirty">
+            <span class="option-main">
+              <span class="option-title">Water looks dirty</span>
+              <span class="option-sub">Cleaning may be needed.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Water is green">
+            <span class="option-main">
+              <span class="option-title">Water is green</span>
+              <span class="option-sub">Recovery cleanup likely.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Water is cloudy">
+            <span class="option-main">
+              <span class="option-title">Water is cloudy</span>
+              <span class="option-sub">Balancing or filter issue possible.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Pool has debris">
+            <span class="option-main">
+              <span class="option-title">Pool has debris</span>
+              <span class="option-sub">Leaves, dirt, or debris cleanup.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Equipment is making noise">
+            <span class="option-main">
+              <span class="option-title">Equipment is making noise</span>
+              <span class="option-sub">May need equipment branch.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Pump is not running">
+            <span class="option-main">
+              <span class="option-title">Pump is not running</span>
+              <span class="option-sub">Equipment branch needed.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Pool is leaking">
+            <span class="option-main">
+              <span class="option-title">Pool is leaking</span>
+              <span class="option-sub">Inspection or repair may be needed.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="I just bought the house">
+            <span class="option-main">
+              <span class="option-title">I just bought the house</span>
+              <span class="option-sub">Inspection or walkthrough may be useful.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="I need regular service">
+            <span class="option-main">
+              <span class="option-title">I need regular service</span>
+              <span class="option-sub">Maintenance path likely.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="I need someone to inspect it">
+            <span class="option-main">
+              <span class="option-title">I need someone to inspect it</span>
+              <span class="option-sub">Inspection branch likely.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">That’s okay. Submit the request anyway.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- EQUIPMENT BRANCH -->
+      <div class="screen" data-screen="equipmentAffected">
+        <div class="eyebrow">Equipment branch</div>
+        <h2>What equipment is having problems?</h2>
+        <p class="description">
+          Select all that apply. This branch only appears when the request involves equipment.
+        </p>
+
+        <div class="branch-note">
+          Equipment questions are conditional. Customers only see this when they choose equipment issues or when another answer points here.
+        </div>
+
+        <div class="options" data-name="equipmentAffected" data-mode="multi">
+          <button class="option" data-value="Pump">
+            <span class="option-main">
+              <span class="option-title">Pump</span>
+              <span class="option-sub">Circulates water through the system.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Filter">
+            <span class="option-main">
+              <span class="option-title">Filter</span>
+              <span class="option-sub">Sand, cartridge, DE, or unknown filter type.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Heater">
+            <span class="option-main">
+              <span class="option-title">Heater</span>
+              <span class="option-sub">Gas, electric, or heat pump.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Salt system">
+            <span class="option-main">
+              <span class="option-title">Salt system</span>
+              <span class="option-sub">Saltwater chlorine generator.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Chlorinator">
+            <span class="option-main">
+              <span class="option-title">Chlorinator</span>
+              <span class="option-sub">Chemical feeder system.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Timer / automation">
+            <span class="option-main">
+              <span class="option-title">Timer / automation</span>
+              <span class="option-sub">Scheduling, automation, controls.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Cleaner / robot">
+            <span class="option-main">
+              <span class="option-title">Cleaner / robot</span>
+              <span class="option-sub">Automatic cleaner, robot, or vacuum issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Plumbing / pipes">
+            <span class="option-main">
+              <span class="option-title">Plumbing / pipes</span>
+              <span class="option-sub">Leaks, valves, pipe issues.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Lights">
+            <span class="option-main">
+              <span class="option-title">Lights</span>
+              <span class="option-sub">Pool light issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Photos can help identify the equipment.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div class="screen" data-screen="equipmentSymptoms">
+        <div class="eyebrow">Equipment symptoms</div>
+        <h2>What is happening?</h2>
+        <p class="description">
+          Select all symptoms that apply.
+        </p>
+
+        <div class="options" data-name="equipmentSymptoms" data-mode="multi">
+          <button class="option" data-value="Not turning on">
+            <span class="option-main">
+              <span class="option-title">Not turning on</span>
+              <span class="option-sub">Won’t start or power up.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Leaking">
+            <span class="option-main">
+              <span class="option-title">Leaking</span>
+              <span class="option-sub">Water leaking from equipment or pipes.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Making noise">
+            <span class="option-main">
+              <span class="option-title">Making noise</span>
+              <span class="option-sub">Grinding, humming, buzzing, or unusual sound.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Low pressure">
+            <span class="option-main">
+              <span class="option-title">Low pressure</span>
+              <span class="option-sub">Weak water flow or low return pressure.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="No water movement">
+            <span class="option-main">
+              <span class="option-title">No water movement</span>
+              <span class="option-sub">Pool is not circulating.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Breaker trips">
+            <span class="option-main">
+              <span class="option-title">Breaker trips</span>
+              <span class="option-sub">Electrical issue possible.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Error code showing">
+            <span class="option-main">
+              <span class="option-title">Error code showing</span>
+              <span class="option-sub">Control panel or system message.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Water not heating">
+            <span class="option-main">
+              <span class="option-title">Water not heating</span>
+              <span class="option-sub">Heater issue possible.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Water not clearing">
+            <span class="option-main">
+              <span class="option-title">Water not clearing</span>
+              <span class="option-sub">Could be filter, circulation, or chemical issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Technician can review.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div class="screen" data-screen="equipmentStarted">
+        <div class="eyebrow">Equipment timing</div>
+        <h2>When did the problem start?</h2>
+        <p class="description">
+          This helps tell whether the issue is sudden, recurring, or long-term.
+        </p>
+
+        <div class="options" data-name="equipmentStarted" data-mode="single">
+          <button class="option" data-value="Today">
+            <span class="option-main">
+              <span class="option-title">Today</span>
+              <span class="option-sub">New issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="This week">
+            <span class="option-main">
+              <span class="option-title">This week</span>
+              <span class="option-sub">Recent issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="1–4 weeks ago">
+            <span class="option-main">
+              <span class="option-title">1–4 weeks ago</span>
+              <span class="option-sub">Ongoing issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="More than a month ago">
+            <span class="option-main">
+              <span class="option-title">More than a month ago</span>
+              <span class="option-sub">Long-term problem.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">No problem.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div class="screen" data-screen="poolUsable">
+        <div class="eyebrow">Urgency</div>
+        <h2>Is this stopping the pool from being usable?</h2>
+        <p class="description">
+          This helps the business judge urgency.
+        </p>
+
+        <div class="options" data-name="poolUsable" data-mode="single">
+          <button class="option" data-value="Yes">
+            <span class="option-main">
+              <span class="option-title">Yes</span>
+              <span class="option-sub">Pool cannot be used normally.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="No">
+            <span class="option-main">
+              <span class="option-title">No</span>
+              <span class="option-sub">Pool still works, but there is an issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Partially">
+            <span class="option-main">
+              <span class="option-title">Partially</span>
+              <span class="option-sub">It works sometimes or has limited use.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Technician can review.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- SPA SERVICE -->
+      <div class="screen" data-screen="spaNeeds">
+        <div class="eyebrow">Spa service</div>
+        <h2>What do you need help with?</h2>
+        <p class="description">
+          Select everything that applies.
+        </p>
+
+        <div class="options" data-name="spaNeeds" data-mode="multi">
+          <button class="option" data-value="Water cleaning">
+            <span class="option-main">
+              <span class="option-title">Water cleaning</span>
+              <span class="option-sub">Spa water looks dirty or needs care.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Draining and refilling">
+            <span class="option-main">
+              <span class="option-title">Draining and refilling</span>
+              <span class="option-sub">Full spa water change.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Chemical balancing">
+            <span class="option-main">
+              <span class="option-title">Chemical balancing</span>
+              <span class="option-sub">Sanitizer, pH, alkalinity, etc.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Filter cleaning">
+            <span class="option-main">
+              <span class="option-title">Filter cleaning</span>
+              <span class="option-sub">Clean or check spa filter.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Jets not working">
+            <span class="option-main">
+              <span class="option-title">Jets not working</span>
+              <span class="option-sub">Spa equipment issue.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Heater issue">
+            <span class="option-main">
+              <span class="option-title">Heater issue</span>
+              <span class="option-sub">Water not heating correctly.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Leak">
+            <span class="option-main">
+              <span class="option-title">Leak</span>
+              <span class="option-sub">Water loss or visible leak.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Error code">
+            <span class="option-main">
+              <span class="option-title">Error code</span>
+              <span class="option-sub">Panel warning or code.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">Technician can review.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="small-note">
+          If you select jets, heater, leak, or error code, the equipment branch will appear.
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div class="screen" data-screen="spaFilled">
+        <div class="eyebrow">Spa status</div>
+        <h2>Is it currently filled with water?</h2>
+        <p class="description">
+          This helps with cleaning, draining, and repair planning.
+        </p>
+
+        <div class="options" data-name="spaFilled" data-mode="single">
+          <button class="option" data-value="Yes">
+            <span class="option-main">
+              <span class="option-title">Yes</span>
+              <span class="option-sub">Currently filled.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="No">
+            <span class="option-main">
+              <span class="option-title">No</span>
+              <span class="option-sub">Currently empty.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Partially">
+            <span class="option-main">
+              <span class="option-title">Partially</span>
+              <span class="option-sub">Some water, but not full.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">No problem.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- INSPECTION -->
+      <div class="screen" data-screen="inspectionNeeds">
+        <div class="eyebrow">Inspection</div>
+        <h2>What do you want checked?</h2>
+        <p class="description">
+          This is useful for new homeowners or people who are not sure what they have.
+        </p>
+
+        <div class="options" data-name="inspectionNeeds" data-mode="multi">
+          <button class="option" data-value="Pool condition">
+            <span class="option-main">
+              <span class="option-title">Pool condition</span>
+              <span class="option-sub">Water, surface, cleanliness.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Equipment">
+            <span class="option-main">
+              <span class="option-title">Equipment</span>
+              <span class="option-sub">Pump, filter, heater, controls.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Plumbing">
+            <span class="option-main">
+              <span class="option-title">Plumbing</span>
+              <span class="option-sub">Leaks, pipes, valves.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Safety concerns">
+            <span class="option-main">
+              <span class="option-title">Safety concerns</span>
+              <span class="option-sub">Cover, access, visible hazards.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Maintenance plan">
+            <span class="option-main">
+              <span class="option-title">Maintenance plan</span>
+              <span class="option-sub">Ongoing care recommendations.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+
+          <button class="option" data-value="Not sure">
+            <span class="option-main">
+              <span class="option-title">Not sure</span>
+              <span class="option-sub">General inspection is fine.</span>
+            </span>
+            <span class="check"></span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- PHOTOS -->
+      <div class="screen" data-screen="photos">
+        <div class="eyebrow">Photos</div>
+        <h2>Can you provide photos?</h2>
+        <p class="description">
+          Photos help the company quote faster and avoid guessing.
+        </p>
+
+        <div class="photo-box">
+          <strong>Suggested photos</strong>
+          Pool water, pool floor, equipment area, pump/filter labels, cover, and any problem spots.
+        </div>
+
+        <div class="fields" style="margin-top: 14px;">
+          <label>
+            Photo / issue notes
+            <textarea id="photoNotes" placeholder="Example: I can text photos. The water is dark green and the pump is making noise."></textarea>
+          </label>
+        </div>
+
+        <div class="small-note">
+          In the first no-backend version, this can simply ask the customer to text photos after submitting the request.
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- LOCATION -->
+      <div class="screen" data-screen="location">
+        <div class="eyebrow">Location</div>
+        <h2>Where is the pool located?</h2>
+        <p class="description">
+          Service area matters. This also helps with scheduling and travel.
+        </p>
+
+        <div class="fields">
+          <label>
+            Street address
+            <input id="address" type="text" placeholder="123 Main Street" />
+          </label>
+
+          <label>
+            City
+            <input id="city" type="text" placeholder="Greeneville" />
+          </label>
+
+          <label>
+            State
+            <input id="state" type="text" placeholder="TN" />
+          </label>
+
+          <label>
+            ZIP code
+            <input id="zip" type="text" placeholder="37743" />
+          </label>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- ACCESS -->
+      <div class="screen" data-screen="access">
+        <div class="eyebrow">Access</div>
+        <h2>How can the technician access the pool?</h2>
+        <p class="description">
+          This prevents wasted trips if the gate is locked, pets are outside, or parking is unclear.
+        </p>
+
+        <div class="fields">
+          <label>
+            Access type
+            <select id="accessType">
+              <option value="">Select one</option>
+              <option value="Unlocked gate">Unlocked gate</option>
+              <option value="Gate code">Gate code</option>
+              <option value="Someone will be home">Someone will be home</option>
+              <option value="Need to schedule access">Need to schedule access</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+
+          <label>
+            Are there pets in the yard?
+            <select id="pets">
+              <option value="">Select one</option>
+              <option value="No pets">No pets</option>
+              <option value="Yes, but they will be inside">Yes, but they will be inside</option>
+              <option value="Yes, they may be outside">Yes, they may be outside</option>
+              <option value="Not sure">Not sure</option>
+            </select>
+          </label>
+
+          <label>
+            Parking / gate / access notes
+            <textarea id="accessNotes" placeholder="Example: Gate code is 1234. Park in driveway. Dogs will be inside."></textarea>
+          </label>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Next</button>
+        </div>
+      </div>
+
+      <!-- CONTACT -->
+      <div class="screen" data-screen="contact">
+        <div class="eyebrow">Contact</div>
+        <h2>How should we contact you?</h2>
+        <p class="description">
+          This helps the business follow up in the way you actually prefer.
+        </p>
+
+        <div class="fields">
+          <label>
+            Full name
+            <input id="customerName" type="text" placeholder="Your name" />
+          </label>
+
+          <label>
+            Phone number
+            <input id="phone" type="tel" placeholder="(423) 555-1234" />
+          </label>
+
+          <label>
+            Email
+            <input id="email" type="email" placeholder="you@example.com" />
+          </label>
+
+          <label>
+            Preferred contact method
+            <select id="contactMethod">
+              <option value="">Select one</option>
+              <option value="Text">Text</option>
+              <option value="Phone call">Phone call</option>
+              <option value="Email">Email</option>
+              <option value="Any method is fine">Any method is fine</option>
+            </select>
+          </label>
+
+          <label>
+            Best time to contact
+            <input id="bestTime" type="text" placeholder="Example: Weekdays after 4 PM" />
+          </label>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-primary nextBtn">Review</button>
+        </div>
+      </div>
+
+      <!-- REVIEW -->
+      <div class="screen" data-screen="review">
+        <div class="eyebrow">Review</div>
+        <h2>Quote request summary</h2>
+        <p class="description">
+          This is the clean version the pool company would receive.
+        </p>
+
+        <div class="review" id="reviewBox"></div>
+
+        <div class="lead-box">
+          <h3 id="leadTitle">Lead category</h3>
+          <p id="leadText">The request will be categorized here.</p>
+        </div>
+
+        <textarea class="summary-text" id="summaryText" readonly></textarea>
+
+        <div class="action-grid">
+          <a class="btn btn-primary" id="textBtn" href="#">Text request</a>
+          <a class="btn btn-secondary" id="emailBtn" href="#">Email request</a>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-secondary backBtn">Back</button>
+          <button class="btn btn-danger" id="resetBtn">Reset</button>
+        </div>
+      </div>
+
+    </section>
+
+    <p class="footer-note">
+      Prototype flow by DS Digital Designs.
+    </p>
+  </main>
+
+  <script>
+    const screens = Array.from(document.querySelectorAll(".screen"));
+    const progress = document.getElementById("progress");
+    const stepCounter = document.getElementById("stepCounter");
+    const reviewBox = document.getElementById("reviewBox");
+    const summaryText = document.getElementById("summaryText");
+    const textBtn = document.getElementById("textBtn");
+    const emailBtn = document.getElementById("emailBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const leadTitle = document.getElementById("leadTitle");
+    const leadText = document.getElementById("leadText");
+
+    let currentScreenId = "start";
+    let historyStack = [];
+
+    const data = {
+      serviceType: "",
+      poolType: "",
+      spaType: "",
+      size: "",
+
+      frequency: "",
+      currentIssues: [],
+      lastServiced: "",
+
+      cleaningNeeds: [],
+      waterSeverity: "",
+
+      recoverySeverity: "",
+      recoveryIssues: [],
+      pumpFilterRun: "",
+      recoveryTime: "",
+
+      openingCovered: "",
+      openingTasks: [],
+      openingWater: "",
+
+      closingTasks: [],
+      closingCover: "",
+      closingClean: "",
+
+      generalSymptoms: [],
+
+      equipmentAffected: [],
+      equipmentSymptoms: [],
+      equipmentStarted: "",
+      poolUsable: "",
+
+      spaNeeds: [],
+      spaFilled: "",
+
+      inspectionNeeds: [],
+
+      photoNotes: "",
+      address: "",
+      city: "",
+      state: "",
+      zip: "",
+
+      accessType: "",
+      pets: "",
+      accessNotes: "",
+
+      customerName: "",
+      phone: "",
+      email: "",
+      contactMethod: "",
+      bestTime: ""
+    };
+
+    function visibleIndex() {
+      return screens.findIndex(screen => screen.dataset.screen === currentScreenId);
+    }
+
+    function showScreen(screenId, pushHistory = true) {
+      collectFields();
+
+      if (pushHistory && currentScreenId !== screenId) {
+        historyStack.push(currentScreenId);
+      }
+
+      currentScreenId = screenId;
+
+      screens.forEach(screen => {
+        screen.classList.toggle("active", screen.dataset.screen === currentScreenId);
+      });
+
+      const currentIndex = visibleIndex() + 1;
+      const percent = (currentIndex / screens.length) * 100;
+      progress.style.width = percent + "%";
+
+      stepCounter.textContent = `Step ${historyStack.length + 1}`;
+
+      if (currentScreenId === "review") {
+        buildReview();
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function goBack() {
+      collectFields();
+
+      const previous = historyStack.pop();
+
+      if (previous) {
+        showScreen(previous, false);
+      }
+    }
+
+    function nextScreen() {
+      collectFields();
+
+      const next = getNextScreen(currentScreenId);
+
+      if (next) {
+        showScreen(next);
+      }
+    }
+
+    function includesAny(array, values) {
+      if (!Array.isArray(array)) return false;
+      return values.some(value => array.includes(value));
+    }
+
+    function needsRecoveryBranch() {
+      if (data.serviceType === "Green pool cleanup") return true;
+
+      if (["Light green", "Dark green", "Brown / black / swampy"].includes(data.waterSeverity)) {
+        return true;
+      }
+
+      if (["Green", "Very dirty"].includes(data.openingWater)) {
+        return true;
+      }
+
+      if (["Somewhat dirty", "Green / cloudy"].includes(data.closingClean)) {
+        return true;
+      }
+
+      if (includesAny(data.currentIssues, [
+        "Green water",
+        "Has not been serviced recently"
+      ])) {
+        return true;
+      }
+
+      if (data.lastServiced === "More than 3 months ago") {
+        return true;
+      }
+
+      if (includesAny(data.generalSymptoms, [
+        "Water is green"
+      ])) {
+        return true;
+      }
+
+      return false;
+    }
+
+    function needsEquipmentBranch() {
+      if (data.serviceType === "Equipment problem") return true;
+
+      if (["No", "Sometimes", "Not sure"].includes(data.pumpFilterRun)) {
+        return true;
+      }
+
+      if (includesAny(data.generalSymptoms, [
+        "Equipment is making noise",
+        "Pump is not running",
+        "Pool is leaking"
+      ])) {
+        return true;
+      }
+
+      if (includesAny(data.spaNeeds, [
+        "Jets not working",
+        "Heater issue",
+        "Leak",
+        "Error code"
+      ])) {
+        return true;
+      }
+
+      if (includesAny(data.openingTasks, [
+        "Inspect equipment"
+      ])) {
+        return true;
+      }
+
+      return false;
+    }
+
+    function needsInspectionBranch() {
+      if (includesAny(data.generalSymptoms, [
+        "I just bought the house",
+        "I need someone to inspect it"
+      ])) {
+        return true;
+      }
+
+      return false;
+    }
+
+    function getNextScreen(screenId) {
+      switch (screenId) {
+        case "start":
+          if (data.serviceType === "Hot tub / spa service") return "spaType";
+          return "poolType";
+
+        case "poolType":
+          return "size";
+
+        case "spaType":
+          return "size";
+
+        case "size":
+          if (data.serviceType === "Regular pool cleaning / maintenance") return "maintenanceFrequency";
+          if (data.serviceType === "One-time pool cleaning") return "cleaningNeeds";
+          if (data.serviceType === "Green pool cleanup") return "recoverySeverity";
+          if (data.serviceType === "Pool opening") return "openingCovered";
+          if (data.serviceType === "Pool closing") return "closingTasks";
+          if (data.serviceType === "Equipment problem") return "equipmentAffected";
+          if (data.serviceType === "Hot tub / spa service") return "spaNeeds";
+          if (data.serviceType === "Not sure yet") return "generalSymptoms";
+          return "photos";
+
+        case "maintenanceFrequency":
+          return "currentCondition";
+
+        case "currentCondition":
+          if (needsRecoveryBranch()) return "recoverySeverity";
+          return "lastServiced";
+
+        case "lastServiced":
+          if (needsRecoveryBranch()) return "recoverySeverity";
+          return "photos";
+
+        case "cleaningNeeds":
+          return "waterSeverity";
+
+        case "waterSeverity":
+          if (needsRecoveryBranch()) return "recoverySeverity";
+          return "photos";
+
+        case "recoverySeverity":
+          return "recoveryIssues";
+
+        case "recoveryIssues":
+          return "pumpFilterRun";
+
+        case "pumpFilterRun":
+          if (needsEquipmentBranch()) return "equipmentAffected";
+          return "recoveryTime";
+
+        case "recoveryTime":
+          return "photos";
+
+        case "openingCovered":
+          return "openingTasks";
+
+        case "openingTasks":
+          return "openingWater";
+
+        case "openingWater":
+          if (needsRecoveryBranch()) return "recoverySeverity";
+          if (needsEquipmentBranch()) return "equipmentAffected";
+          return "photos";
+
+        case "closingTasks":
+          return "closingCover";
+
+        case "closingCover":
+          return "closingClean";
+
+        case "closingClean":
+          if (needsRecoveryBranch()) return "recoverySeverity";
+          return "photos";
+
+        case "generalSymptoms":
+          if (needsRecoveryBranch()) return "recoverySeverity";
+          if (needsEquipmentBranch()) return "equipmentAffected";
+          if (needsInspectionBranch()) return "inspectionNeeds";
+          if (includesAny(data.generalSymptoms, ["I need regular service"])) return "maintenanceFrequency";
+          if (includesAny(data.generalSymptoms, ["Water looks dirty", "Water is cloudy", "Pool has debris"])) return "cleaningNeeds";
+          return "photos";
+
+        case "equipmentAffected":
+          return "equipmentSymptoms";
+
+        case "equipmentSymptoms":
+          return "equipmentStarted";
+
+        case "equipmentStarted":
+          return "poolUsable";
+
+        case "poolUsable":
+          if (data.serviceType === "Green pool cleanup" || needsRecoveryBranch()) return "recoveryTime";
+          return "photos";
+
+        case "spaNeeds":
+          if (needsEquipmentBranch()) return "equipmentAffected";
+          return "spaFilled";
+
+        case "spaFilled":
+          return "photos";
+
+        case "inspectionNeeds":
+          return "photos";
+
+        case "photos":
+          return "location";
+
+        case "location":
+          return "access";
+
+        case "access":
+          return "contact";
+
+        case "contact":
+          return "review";
+
+        default:
+          return "review";
+      }
+    }
+
+    function setOption(groupName, value, clickedButton) {
+      const group = clickedButton.closest(".options");
+      const mode = group.dataset.mode || "single";
+      const options = group.querySelectorAll(".option");
+
+      if (mode === "single") {
+        data[groupName] = value;
+
+        options.forEach(option => {
+          option.classList.remove("selected");
+        });
+
+        clickedButton.classList.add("selected");
+        return;
+      }
+
+      if (mode === "multi") {
+        if (!Array.isArray(data[groupName])) {
+          data[groupName] = [];
+        }
+
+        const alreadySelected = data[groupName].includes(value);
+
+        if (alreadySelected) {
+          data[groupName] = data[groupName].filter(item => item !== value);
+          clickedButton.classList.remove("selected");
+        } else {
+          data[groupName].push(value);
+          clickedButton.classList.add("selected");
+        }
+      }
+    }
+
+    function collectFields() {
+      const fieldIds = [
+        "photoNotes",
+        "address",
+        "city",
+        "state",
+        "zip",
+        "accessType",
+        "pets",
+        "accessNotes",
+        "customerName",
+        "phone",
+        "email",
+        "contactMethod",
+        "bestTime"
+      ];
+
+      fieldIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          data[id] = el.value.trim();
+        }
+      });
+    }
+
+    function safe(value) {
+      if (Array.isArray(value)) {
+        return value.length ? value.join(", ") : "Not provided";
+      }
+
+      return value && value.length ? value : "Not provided";
+    }
+
+    function classifyLead() {
+      if (data.serviceType === "Equipment problem" || needsEquipmentBranch()) {
+        return {
+          title: "Equipment Repair / Troubleshooting Lead",
+          text: "This request involves equipment symptoms or an equipment-related trigger. It should be reviewed before giving a simple cleaning price."
+        };
+      }
+
+      if (needsRecoveryBranch()) {
+        return {
+          title: "Green Pool / Recovery Cleanup Lead",
+          text: "This request likely needs cleanup, treatment, or recovery work before normal maintenance can begin."
+        };
+      }
+
+      if (data.serviceType === "Regular pool cleaning / maintenance" || includesAny(data.generalSymptoms, ["I need regular service"])) {
+        return {
+          title: "Maintenance Lead",
+          text: "This looks like a recurring service opportunity. The business can quote weekly, bi-weekly, or seasonal care."
+        };
+      }
+
+      if (data.serviceType === "One-time pool cleaning") {
+        return {
+          title: "Standard Cleaning Lead",
+          text: "This looks like a one-time cleaning request unless photos or notes show a larger issue."
+        };
+      }
+
+      if (data.serviceType === "Pool opening") {
+        return {
+          title: "Seasonal Opening Lead",
+          text: "This request is related to opening the pool for the season."
+        };
+      }
+
+      if (data.serviceType === "Pool closing") {
+        return {
+          title: "Seasonal Closing Lead",
+          text: "This request is related to closing or winterizing the pool."
+        };
+      }
+
+      if (data.serviceType === "Hot tub / spa service") {
+        return {
+          title: "Spa Service Lead",
+          text: "This request is related to hot tub or spa care."
+        };
+      }
+
+      if (needsInspectionBranch()) {
+        return {
+          title: "Inspection / New Homeowner Lead",
+          text: "This request may be best handled as an inspection or system walkthrough."
+        };
+      }
+
+      return {
+        title: "Needs Manual Review",
+        text: "This request does not fit cleanly into one category yet, so the business should review the answers."
+      };
+    }
+
+    function buildReview() {
+      collectFields();
+
+      const category = classifyLead();
+
+      const rows = [
+        ["Lead category", category.title],
+        ["Service selected", safe(data.serviceType)],
+        ["Pool type", safe(data.poolType)],
+        ["Spa type", safe(data.spaType)],
+        ["Size", safe(data.size)],
+
+        ["Frequency", safe(data.frequency)],
+        ["Current issues", safe(data.currentIssues)],
+        ["Last serviced", safe(data.lastServiced)],
+
+        ["Cleaning needs", safe(data.cleaningNeeds)],
+        ["Water severity", safe(data.waterSeverity)],
+
+        ["Recovery severity", safe(data.recoverySeverity)],
+        ["Recovery issues", safe(data.recoveryIssues)],
+        ["Pump/filter can run", safe(data.pumpFilterRun)],
+        ["Recovery timing", safe(data.recoveryTime)],
+
+        ["Opening covered", safe(data.openingCovered)],
+        ["Opening tasks", safe(data.openingTasks)],
+        ["Opening water", safe(data.openingWater)],
+
+        ["Closing tasks", safe(data.closingTasks)],
+        ["Closing cover", safe(data.closingCover)],
+        ["Clean enough to close", safe(data.closingClean)],
+
+        ["General symptoms", safe(data.generalSymptoms)],
+
+        ["Equipment affected", safe(data.equipmentAffected)],
+        ["Equipment symptoms", safe(data.equipmentSymptoms)],
+        ["Equipment started", safe(data.equipmentStarted)],
+        ["Pool usability", safe(data.poolUsable)],
+
+        ["Spa needs", safe(data.spaNeeds)],
+        ["Spa filled", safe(data.spaFilled)],
+
+        ["Inspection needs", safe(data.inspectionNeeds)],
+
+        ["Photo notes", safe(data.photoNotes)],
+
+        ["Address", `${safe(data.address)}\n${safe(data.city)}, ${safe(data.state)} ${safe(data.zip)}`],
+        ["Access type", safe(data.accessType)],
+        ["Pets", safe(data.pets)],
+        ["Access notes", safe(data.accessNotes)],
+
+        ["Customer", safe(data.customerName)],
+        ["Phone", safe(data.phone)],
+        ["Email", safe(data.email)],
+        ["Preferred contact", safe(data.contactMethod)],
+        ["Best time", safe(data.bestTime)]
+      ];
+
+      const filteredRows = rows.filter(([label, value]) => {
+        return value !== "Not provided" && !value.includes("Not provided, Not provided");
+      });
+
+      reviewBox.innerHTML = filteredRows.map(([label, value]) => {
+        return `
+          <div class="review-row">
+            <span>${label}</span>
+            <strong>${value}</strong>
+          </div>
+        `;
+      }).join("");
+
+      leadTitle.textContent = category.title;
+      leadText.textContent = category.text;
+
+      const summary = `
+POOL QUOTE REQUEST
+
+LEAD CATEGORY:
+${category.title}
+
+LEAD NOTE:
+${category.text}
+
+CUSTOMER:
+Name: ${safe(data.customerName)}
+Phone: ${safe(data.phone)}
+Email: ${safe(data.email)}
+Preferred contact method: ${safe(data.contactMethod)}
+Best time to contact: ${safe(data.bestTime)}
+
+MAIN REQUEST:
+Service selected: ${safe(data.serviceType)}
+Pool type: ${safe(data.poolType)}
+Spa type: ${safe(data.spaType)}
+Size: ${safe(data.size)}
+
+MAINTENANCE DETAILS:
+Frequency: ${safe(data.frequency)}
+Current issues: ${safe(data.currentIssues)}
+Last serviced: ${safe(data.lastServiced)}
+
+CLEANING DETAILS:
+Cleaning needs: ${safe(data.cleaningNeeds)}
+Water severity: ${safe(data.waterSeverity)}
+
+RECOVERY DETAILS:
+Recovery severity: ${safe(data.recoverySeverity)}
+Recovery issues: ${safe(data.recoveryIssues)}
+Can pump/filter run: ${safe(data.pumpFilterRun)}
+How long it has been like this: ${safe(data.recoveryTime)}
+
+OPENING DETAILS:
+Covered: ${safe(data.openingCovered)}
+Opening tasks: ${safe(data.openingTasks)}
+Opening water: ${safe(data.openingWater)}
+
+CLOSING DETAILS:
+Closing tasks: ${safe(data.closingTasks)}
+Has cover: ${safe(data.closingCover)}
+Clean enough to close: ${safe(data.closingClean)}
+
+GENERAL SYMPTOMS:
+${safe(data.generalSymptoms)}
+
+EQUIPMENT DETAILS:
+Equipment affected: ${safe(data.equipmentAffected)}
+Symptoms: ${safe(data.equipmentSymptoms)}
+Problem started: ${safe(data.equipmentStarted)}
+Pool usable: ${safe(data.poolUsable)}
+
+SPA DETAILS:
+Spa needs: ${safe(data.spaNeeds)}
+Spa filled: ${safe(data.spaFilled)}
+
+INSPECTION DETAILS:
+Inspection needs: ${safe(data.inspectionNeeds)}
+
+PHOTOS / NOTES:
+${safe(data.photoNotes)}
+
+LOCATION:
+${safe(data.address)}
+${safe(data.city)}, ${safe(data.state)} ${safe(data.zip)}
+
+ACCESS:
+Access type: ${safe(data.accessType)}
+Pets: ${safe(data.pets)}
+Notes: ${safe(data.accessNotes)}
+      `.trim();
+
+      summaryText.value = summary;
+
+      const encodedSummary = encodeURIComponent(summary);
+
+      /*
+        Replace this with the pool company's real phone number.
+        Use only digits for best mobile compatibility.
+      */
+      const businessPhone = "4235551234";
+
+      /*
+        Replace this with the pool company's real email.
+      */
+      const businessEmail = "quotes@example.com";
+
+      textBtn.href = `sms:${businessPhone}?&body=${encodedSummary}`;
+      emailBtn.href = `mailto:${businessEmail}?subject=${encodeURIComponent("New Pool Quote Request")}&body=${encodedSummary}`;
+    }
+
+    function resetApp() {
+      Object.keys(data).forEach(key => {
+        data[key] = Array.isArray(data[key]) ? [] : "";
+      });
+
+      document.querySelectorAll(".option").forEach(option => {
+        option.classList.remove("selected");
+      });
+
+      document.querySelectorAll("input, textarea, select").forEach(field => {
+        field.value = "";
+      });
+
+      historyStack = [];
+      currentScreenId = "start";
+      showScreen("start", false);
+    }
+
+    document.querySelectorAll(".option").forEach(button => {
+      button.addEventListener("click", () => {
+        const group = button.closest(".options");
+        const groupName = group.dataset.name;
+        const value = button.dataset.value;
+
+        setOption(groupName, value, button);
+      });
+    });
+
+    document.querySelectorAll(".nextBtn").forEach(button => {
+      button.addEventListener("click", nextScreen);
+    });
+
+    document.querySelectorAll(".backBtn").forEach(button => {
+      button.addEventListener("click", goBack);
+    });
+
+    resetBtn.addEventListener("click", resetApp);
+
+    showScreen("start", false);
+  </script>
+</body>
+</html>
